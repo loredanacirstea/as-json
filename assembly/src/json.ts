@@ -604,7 +604,7 @@ function parseNumberArray<T extends number[]>(data: string): T {
     }
     for (; i > lastPos - 1; i--) {
         char = unsafeCharCodeAt(data, i);
-        if (char !== rightBracketCode) {
+        if (char !== rightBracketCode && char !== leftBracketCode) {
             result.push(parseNumber<valueof<T>>(data.slice(lastPos, i + 1)));
             break;
         }
