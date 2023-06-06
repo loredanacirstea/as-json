@@ -26,6 +26,7 @@
     "@as-pect/cli": "^8.0.1",
     "@as-tral/cli": "^2.0.0",
     "@assemblyscript/wasi-shim": "^0.1.0",
+    "as-tally": "file:../wasmx-as-contracts/packages/as-tally",
     "assemblyscript": "^0.27.1",
     "assemblyscript-prettier": "^1.0.7",
     "prettier": "^2.8.4",
@@ -33,9 +34,11 @@
     "visitor-as": "^0.11.4"
   },
   "dependencies": {
-    "as-bignum": "^0.2.23",
     "as-string-sink": "^0.5.3",
     "as-variant": "^0.4.1"
+  },
+  "peerDependencies": {
+    "as-tally": "file:../wasmx-as-contracts/packages/as-tally"
   },
   "repository": {
     "type": "git",

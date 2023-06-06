@@ -1,18 +1,12 @@
 import { StringSink } from "as-string-sink/assembly";
 import { CharCode, isSpace } from "util/string";
 import { backSlashCode, quoteCode, rCode } from "./chars";
-import { u128, u128Safe, u256, u256Safe, i128, i128Safe, i256Safe } from "as-bignum/assembly";
+import { tally as BigInt } from "as-tally/assembly";
 
 // @ts-ignore
 @inline
 export function isBigNum<T>(): boolean {
-  if (idof<T>() == idof<u128>()) return true;
-  if (idof<T>() == idof<u128Safe>()) return true;
-  if (idof<T>() == idof<u256>()) return true;
-  if (idof<T>() == idof<u256Safe>()) return true;
-  if (idof<T>() == idof<i128>()) return true;
-  if (idof<T>() == idof<i128Safe>()) return true;
-  if (idof<T>() == idof<i256Safe>()) return true;
+  if (idof<T>() == idof<BigInt>()) return true;
   return false;
 }
 
@@ -56,7 +50,7 @@ export function escapeChar(char: string): string {
     case 0x09: return "\\t";
     case 0x0C: return "\\f";
     case 0x0B: return "\\u000b";
-    default: return char; 
+    default: return char;
   }
 }
 
@@ -89,8 +83,10 @@ export function atoi_fast<T extends number>(str: string, offset: i32 = 0): T {
   // @ts-ignore
   let val: T = 0;
   for (; offset < (str.length << 1); offset += 2) {
+    let _char: u16 = load<u16>(changetype<usize>(str) + <usize>offset)
+    let char: u8 = u8(_char);
     // @ts-ignore
-    val = (val << 1) + (val << 3) + (load<u16>(changetype<usize>(str) + <usize>offset) - 48);
+    val = (val << 1) + (val << 3) + (char - 48);
     // We use load because in this case, there is no need to have bounds-checking
   }
   return val;
@@ -105,15 +101,18 @@ export function atoi_fast<T extends number>(str: string, offset: i32 = 0): T {
 export function parseJSONInt<T extends number>(str: string): T {
   // @ts-ignore
   let val: T = 0;
-  let char: u16 = load<u16>(changetype<usize>(str));
+  let _char: u16 = load<u16>(changetype<usize>(str));
+  let char: u8 = u8(_char);
   let pos = 2;
   let neg = char === 45;
   // @ts-ignore
   val = (val << 1) + (val << 3) + (char - 48);
   for (; pos < (str.length << 1); pos += 2) {
-    char = load<u16>(changetype<usize>(str) + <usize>pos);
+    _char = load<u16>(changetype<usize>(str) + <usize>pos);
+    char = u8(_char);
     if (char === 101 || char === 69) {
-      char = load<u16>(changetype<usize>(str) + <usize>(pos += 2));
+      _char = load<u16>(changetype<usize>(str) + <usize>(pos += 2));
+      char = u8(_char);
       if (char === 45) {
         // @ts-ignore
         val /= sciNote<T>(atoi_fast<T>(str, pos += 2));
@@ -143,13 +142,16 @@ export function parseJSONInt<T extends number>(str: string): T {
 }
 
 function sciNote<T extends number>(num: T): T {
-  let res = 1;
+  // @ts-ignore
+  let res: T = 1;
   if (num > 0) {
-    for (let i = 0; i < num; i++) {
+    for (let i: u64 = 0; i < u64(num); i++) {
+      // @ts-ignore
       res *= 10;
     }
   } else {
-    for (let i = 0; i < num; i++) {
+    for (let i: u64 = 0; i < u64(num); i++) {
+      // @ts-ignore
       res /= 10;
     }
   }

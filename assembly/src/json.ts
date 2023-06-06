@@ -1,4 +1,4 @@
-import { u128, u128Safe, u256, u256Safe, i128, i128Safe } from "as-bignum/assembly";
+import { tally as BigInt } from "as-tally/assembly";
 import { StringSink } from "as-string-sink/assembly";
 import { itoa32, itoa64, dtoa, dtoa_buffered } from "util/number";
 import { isSpace } from "util/string";
@@ -112,6 +112,7 @@ export namespace JSON {
     // @ts-ignore
     export function parse<T>(data: string): T {
         let type: T;
+
         if (isString<T>()) {
             // @ts-ignore
             return parseString(data);
@@ -193,6 +194,7 @@ export namespace JSON {
             return parseBoolean<T>(data);
         } else if (isFloat<T>() || isInteger<T>()) {
             return parseNumber<T>(data);
+            // @ts-ignore
         } else if (isArrayLike<T>()) {
             // @ts-ignore
             return parseArray<T>(data);
@@ -308,20 +310,9 @@ function serializeString(data: string): string {
 @inline
 // @ts-ignore
 function parseBigNum<T>(data: string): T {
+    const arr = decode_arraybuffer_view<Uint8Array>(data);
     // @ts-ignore
-    if (idof<T>() == idof<u128>()) return u128.fromString(data);
-    // @ts-ignore
-    if (idof<T>() == idof<u128Safe>()) return u128Safe.fromString(data);
-    // @ts-ignore
-    if (idof<T>() == idof<u256>()) return u128Safe.fromString(data);
-    // @ts-ignore
-    if (idof<T>() == idof<u256Safe>()) return u256Safe.fromString(data);
-    // @ts-ignore
-    if (idof<T>() == idof<i128>()) return i128.fromString(data);
-    // @ts-ignore
-    if (idof<T>() == idof<i128Safe>()) return i128Safe.fromString(data);
-    // @ts-ignore
-    //if (idof<T>() == idof<i256Safe>()) return data.
+    return BigInt.fromUint8Array(arr, 0, false);
 }
 
 // @ts-ignore
@@ -516,10 +507,28 @@ function parseObject<T>(data: string): T {
 function parseArray<T extends unknown[]>(data: string): T {
     if (isString<valueof<T>>()) {
         return <T>parseStringArray(data);
-    } else if (isBoolean<valueof<T>>()) {
+    }
+    if (isBoolean<valueof<T>>()) {
         // @ts-ignore
         return parseBooleanArray<T>(data);
-    } else if (isFloat<valueof<T>>() || isInteger<valueof<T>>()) {
+    }
+
+    // @ts-ignore
+    if (idof<T>() == idof<ArrayBuffer>()) { return decode_arraybuffer(data); }
+    // @ts-ignore
+    if (idof<T>() == idof<Uint8Array>()) { return decode_arraybuffer_view<T>(data); }
+    // @ts-ignore
+    if (idof<T>() == idof<Uint16Array>()) { return decode_arraybuffer_view<T>(data); }
+    // @ts-ignore
+    if (idof<T>() == idof<Uint32Array>()) { return decode_arraybuffer_view<T>(data); }
+    // @ts-ignore
+    if (idof<T>() == idof<Uint64Array>()) { return decode_arraybuffer_view<T>(data); }
+    // @ts-ignore
+    // if (idof<T>() == idof<StaticArray>()) { return decode_static_array<valueof<T>>(data); }
+    // @ts-ignore
+    if (isBigNum<T>()) {return parseBigNum<T>(data);}
+
+    if (isFloat<valueof<T>>() || isInteger<valueof<T>>()) {
         // @ts-ignore
         return parseNumberArray<T>(data);
     } else if (isArrayLike<valueof<T>>()) {
@@ -640,6 +649,36 @@ function parseArrayArray<T extends unknown[][]>(data: string): T {
         }
     }
     return result;
+}
+
+function decode_arraybuffer(data: string): ArrayBuffer {
+    return decode_arraybuffer_view<Uint8Array>(data).buffer
+}
+
+function decode_arraybuffer_view<T extends ArrayBufferView>(data: string): T {
+    // @ts-ignore
+    if (idof<T>() == idof<Uint8Array>()) {
+        let u8arr = parseNumberArray<u8[]>(data)
+        return changetype<T>(u8arr);
+    }
+    // @ts-ignore
+    return WRAP<T, valueof<T>>(decode_arraybuffer_view<Uint8Array>().buffer);
+}
+
+function decode_static_array<T>(data: string):StaticArray<T>{
+    return decode_array_to_type<StaticArray<T>>(data)
+}
+
+function decode_array_to_type<A>(data: string): A {
+    // @ts-ignore
+    let decoded:Array<valueof<A>> = decode_array<Array<valueof<A>>>()
+    let ret:A = instantiate<A>(decoded.length)
+
+    for(let i:i32 = 0; i < decoded.length; i++){
+      // @ts-ignore
+      ret[i] = decoded[i]
+    }
+    return ret
 }
 
 // @ts-ignore
