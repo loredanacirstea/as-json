@@ -310,7 +310,7 @@ function serializeString(data: string): string {
 @inline
 // @ts-ignore
 function parseBigNum<T>(data: string): T {
-    const arr = decode_arraybuffer_view<Uint8Array>(data);
+    const arr = decode_Uint8Array<Uint8Array>(data);
     // @ts-ignore
     return BigInt.fromUint8Array(arr, 0, false);
 }
@@ -516,13 +516,15 @@ function parseArray<T extends unknown[]>(data: string): T {
     // @ts-ignore
     if (idof<T>() == idof<ArrayBuffer>()) { return decode_arraybuffer(data); }
     // @ts-ignore
-    if (idof<T>() == idof<Uint8Array>()) { return decode_arraybuffer_view<T>(data); }
+    if (idof<T>() == idof<Uint8Array>()) { return decode_Uint8Array<T>(data); }
     // @ts-ignore
-    if (idof<T>() == idof<Uint16Array>()) { return decode_arraybuffer_view<T>(data); }
+    if (idof<T>() == idof<Uint16Array>()) { return decode_Uint16Array<T>(data); }
     // @ts-ignore
-    if (idof<T>() == idof<Uint32Array>()) { return decode_arraybuffer_view<T>(data); }
+    if (idof<T>() == idof<Uint32Array>()) { return decode_Uint32Array<T>(data); }
     // @ts-ignore
-    if (idof<T>() == idof<Uint64Array>()) { return decode_arraybuffer_view<T>(data); }
+    if (idof<T>() == idof<Uint64Array>()) { return decode_Uint64Array<T>(data); }
+    // // @ts-ignore
+    // if (idof<T>() == idof<ArrayBufferView>()) { return decode_arraybuffer_view<T>(data); }
     // @ts-ignore
     // if (idof<T>() == idof<StaticArray>()) { return decode_static_array<valueof<T>>(data); }
     // @ts-ignore
@@ -652,13 +654,43 @@ function parseArrayArray<T extends unknown[][]>(data: string): T {
 }
 
 function decode_arraybuffer(data: string): ArrayBuffer {
-    return decode_arraybuffer_view<Uint8Array>(data).buffer
+    return decode_Uint8Array<Uint8Array>(data).buffer
+}
+
+function decode_Uint8Array<T extends Uint8Array>(data: string): T {
+    let basearr = parseNumberArray<u8[]>(data)
+    const newarr = instantiate<T>(basearr.length);
+    newarr.set(basearr);
+    return newarr;
+}
+
+function decode_Uint16Array<T extends Uint16Array>(data: string): T {
+    let basearr = parseNumberArray<u16[]>(data)
+    const newarr = instantiate<T>(basearr.length);
+    newarr.set(basearr);
+    return newarr;
+}
+
+function decode_Uint32Array<T extends Uint32Array>(data: string): T {
+    let basearr = parseNumberArray<u32[]>(data)
+    const newarr = instantiate<T>(basearr.length);
+    newarr.set(basearr);
+    return newarr;
+}
+
+function decode_Uint64Array<T extends Uint64Array>(data: string): T {
+    let basearr = parseNumberArray<u64[]>(data)
+    const newarr = instantiate<T>(basearr.length);
+    newarr.set(basearr);
+    return newarr;
 }
 
 function decode_arraybuffer_view<T extends ArrayBufferView>(data: string): T {
     // @ts-ignore
     if (idof<T>() == idof<Uint8Array>()) {
         let u8arr = parseNumberArray<u8[]>(data)
+        // TypedArrays do not map over number arrays
+        // e.g. Uint8Array something adds some zeros on the right
         return changetype<T>(u8arr);
     }
     // @ts-ignore
