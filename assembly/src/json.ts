@@ -467,7 +467,7 @@ export namespace JSON {
   const schema: nonnull<T> = changetype<nonnull<T>>(
     __new(offsetof<nonnull<T>>(), idof<nonnull<T>>())
   );
-  
+
   // @ts-ignore
   if (initializeDefaultValues) schema.__JSON_Initialize();
 
@@ -598,7 +598,7 @@ export namespace JSON {
   const map: nonnull<T> = changetype<nonnull<T>>(
     __new(offsetof<nonnull<T>>(), idof<nonnull<T>>())
   );
-  
+
   if (!isDefined(map.set)) {
     return unreachable();
   }
@@ -666,7 +666,7 @@ export namespace JSON {
             if (isKey === false) {
               key.reinst(data, outerLoopIndex, stringValueIndex);
               isKey = true;
-            } else {              
+            } else {
               if (isString<valueof<T>>()) {
                 map.set(parseMapKey<indexof<T>>(key), data.slice(outerLoopIndex, stringValueIndex));
               }
@@ -715,7 +715,7 @@ export namespace JSON {
         if (char === colonCode || char === commaCode || char === rightBraceCode || isSpace(char)) {
           if (isFloat<valueof<T>>() || isInteger<valueof<T>>()) {
             map.set(parseMapKey<indexof<T>>(key), parseNumber<valueof<T>>(data.slice(outerLoopIndex - 1, numberValueIndex)));
-          }          
+          }
           outerLoopIndex = numberValueIndex;
           isKey = false;
           break;
@@ -767,7 +767,7 @@ export namespace JSON {
       return parseObjectArray<T>(data);
     }
   }
-  
+
   return unreachable();
 }
 
@@ -839,7 +839,7 @@ export namespace JSON {
   }
   for (; i > lastPos - 1; i--) {
     const char = unsafeCharCodeAt(data, i);
-    if (char !== rightBracketCode) {
+    if (char !== rightBracketCode && char !== leftBracketCode) {
       result.push(parseNumber<valueof<T>>(data.slice(lastPos, i + 1)));
       break;
     }
@@ -899,7 +899,7 @@ export namespace JSON {
   return result;
 }
 
-function parseDate(dateTimeString: string): Date { 
+function parseDate(dateTimeString: string): Date {
   // Use AssemblyScript's date parser
   const d = Date.fromString(dateTimeString);
 
