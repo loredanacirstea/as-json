@@ -46,7 +46,8 @@
   "dependencies": {
     "as-string-sink": "^0.5.3",
     "as-variant": "^0.4.1",
-    "as-virtual": "^0.1.9"
+    "as-virtual": "^0.1.9",
+    "as-tally": "file:../wasmx-as-contracts/packages/as-tally"
   },
   "overrides": {
     "assemblyscript": "$assemblyscript"

@@ -1,6 +1,14 @@
 import { StringSink } from "as-string-sink/assembly";
+import { tally as BigInt } from "as-tally/assembly/tally";
 import { isSpace } from "util/string";
 import { backSlashCode, quoteCode } from "./chars";
+
+// @ts-ignore: Decorator
+@inline export function isBigNum<T>(): boolean {
+  if (isFloat<T>()) return false;
+  if (idof<T>() == idof<BigInt>()) return true;
+  return false;
+}
 
 // @ts-ignore: Decorator
 @inline export function unsafeCharCodeAt(data: string, pos: i32): i32 {
@@ -75,15 +83,15 @@ import { backSlashCode, quoteCode } from "./chars";
  * Loads 32 bits and retrieves the high/low bits.
  * The reason why we only load 4 bytes at a time is that numbers in the 32-bit range are 7 chars long at most.
  * Using SIMD or 64 bit loads would only work well when parsing large 128+ numbers.
- * 
+ *
  * Here are some benchmarks
- * Parsing: "12345" 
+ * Parsing: "12345"
  * Results are spread over 5000ms
- * 
+ *
  * SNIP: 270M iterations
  * ATOI: 285M iterations
- * ParseInt: 176M iterations 
- * 
+ * ParseInt: 176M iterations
+ *
  * @param str - Any number. Can include scientific notation.
 */
 // @ts-ignore: Decorator

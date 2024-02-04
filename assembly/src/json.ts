@@ -1,4 +1,5 @@
 import { StringSink } from "as-string-sink/assembly";
+import { tally as BigInt } from "as-tally/assembly/tally";
 import { isSpace } from "util/string";
 import {
   aCode,
@@ -35,7 +36,7 @@ import {
   falseWord,
   nullWord,
 } from "./chars";
-import { snip_fast, unsafeCharCodeAt } from "./util";
+import { snip_fast, unsafeCharCodeAt, isBigNum } from "./util";
 import { Virtual } from "as-virtual/assembly";
 
 /**
@@ -64,6 +65,9 @@ export namespace JSON {
       // @ts-ignore
       return data.toString();
       // @ts-ignore: Hidden function
+    } else if (isBigNum<T>()) {
+      // @ts-ignore
+      return `"${data.toString(16)}"`;
     } else if (isDefined(data.__JSON_Serialize)) {
       // @ts-ignore: Hidden function
       return data.__JSON_Serialize();
@@ -228,6 +232,9 @@ export namespace JSON {
       return parseBoolean<T>(data);
     } else if (isFloat<T>() || isInteger<T>()) {
       return parseNumber<T>(data);
+    } else if (isBigNum<T>()) {
+      // @ts-ignore
+      return parseBigNum<T>(data);
     } else if (isArrayLike<T>()) {
       // @ts-ignore
       return parseArray<T>(data.trimStart());
@@ -311,6 +318,9 @@ export namespace JSON {
     // @ts-ignore
     return null;
     // @ts-ignore
+  } else if (isBigNum<T>()) {
+    // @ts-ignore
+    return parseBigNum<T>(data);
   } else if (isDefined(type.__JSON_Set_Key)) {
     return parseObject<T>(data.trimStart(), initializeDefaultValues);
   } else if (isMap<T>()) {
@@ -744,6 +754,7 @@ export namespace JSON {
 
 // @ts-ignore: Decorator
 @inline function parseArray<T extends unknown[]>(data: string): T {
+  if (isBigNum<T>()) {return parseBigNum<T>(data);}
   if (isString<valueof<T>>()) {
     return <T>parseStringArray(data);
   } else if (isBoolean<valueof<T>>()) {
@@ -914,3 +925,13 @@ function parseDate(dateTimeString: string): Date {
   let type = changetype<T>(0);
   return type instanceof Map;
 }
+
+// @ts-ignore
+@inline
+// @ts-ignore
+function parseBigNum<T>(data: string): T {
+  const base = data.slice(0, 2) == "0x" ? 16 : 10
+  // @ts-ignore
+    return BigInt.fromString(data, base);
+}
+
