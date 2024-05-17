@@ -67,7 +67,7 @@ export namespace JSON {
       // @ts-ignore: Hidden function
     } else if (isBigNum<T>()) {
       // @ts-ignore
-      return `"${data.toString(16)}"`;
+      return `"${data.toString(10)}"`;
     } else if (isDefined(data.__JSON_Serialize)) {
       // @ts-ignore: Hidden function
       return data.__JSON_Serialize();
