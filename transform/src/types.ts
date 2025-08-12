@@ -102,7 +102,7 @@ export class Src {
   public exports: Schema[];
   private nodeMap: Map<Node, NamespaceDeclaration[]> = new Map<Node, NamespaceDeclaration[]>();
   private classes: Record<string, ClassDeclaration> = {};
-  private imports: ImportStatement[] = [];
+  public imports: ImportStatement[] = [];
 
   constructor(
     source: Source,
