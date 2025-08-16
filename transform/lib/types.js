@@ -29,7 +29,7 @@ export class Property {
             return true;
         }
         for (const dep of this.parent.deps) {
-            if (this.name == dep.name && dep.custom) {
+            if (stripNull(this.type) == dep.name && dep.custom) {
                 this._custom = true;
                 return true;
             }

@@ -33,7 +33,7 @@ export class Property {
     }
 
     for (const dep of this.parent.deps) {
-      if (this.name == dep.name && dep.custom) {
+      if (stripNull(this.type) == dep.name && dep.custom) {
         // console.log("Custom (Dependency): " + this.name);
         this._custom = true;
         return true;
