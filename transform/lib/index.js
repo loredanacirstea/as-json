@@ -519,6 +519,9 @@ export class JSONTransform extends Visitor {
                     sortedMembers.number.push(member);
                 else if (isArray(type))
                     sortedMembers.array.push(member);
+                if (!(isString(type) || isBoolean(type) || isPrimitive(type) || isArray(type) || type.startsWith("JSON."))) {
+                    sortedMembers.string.push(member);
+                }
                 sortedMembers.object.push(member);
             }
         }
