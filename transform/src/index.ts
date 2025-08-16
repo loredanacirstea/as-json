@@ -5,7 +5,7 @@ import { isStdlib, removeExtension, SimpleParser, toString } from "./util.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { Property, PropertyFlags, Schema, Src, SourceSet } from "./types.js";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 import { CustomTransform } from "./linkers/custom.js";
 
 let indent = "  ";
@@ -60,6 +60,29 @@ export class JSONTransform extends Visitor {
               if (externalAlias) {
                 return externalAlias.getBaseType();
               }
+              // Fallback: handle re-export alias like `export { tally as BigInt } from '...';`
+              try {
+                const filePath = path.join(this.baseCWD, externalSource.normalizedPath);
+                if (existsSync(filePath)) {
+                  const content = readFileSync(filePath, "utf8");
+                  const re = new RegExp("export\\s*\\{([^}]+)\\}");
+                  const m = re.exec(content);
+                  if (m) {
+                    const parts = m[1].split(",").map(s => s.trim());
+                    for (const part of parts) {
+                      // match `orig as Alias` form
+                      const asMatch = /^(\S+)\s+as\s+(\S+)$/.exec(part);
+                      if (asMatch) {
+                        const orig = asMatch[1].replace(/[,{}]/g, "");
+                        const alias = asMatch[2].replace(/[,{}]/g, "");
+                        if (alias === decl.name.text) {
+                          return orig;
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch {}
             }
           }
         }
@@ -210,6 +233,31 @@ export class JSONTransform extends Visitor {
               const schem = this.schemas.get(externalSource.internalPath)?.find((s) => s.name == unknownType);
               if (!schem) throw new Error("Could not find schema for " + externalSearch.name.text + " in " + externalSource.internalPath);
               schema.deps.push(schem);
+            } else {
+              // Fallback: search all parser sources for the class by name (handles alias chains)
+              const anySource = this.parser.sources.find((s) => {
+                if (isStdlib(s)) return false;
+                try {
+                  return !!this.sources.get(s).getClass(unknownType);
+                } catch {
+                  return false;
+                }
+              });
+              if (anySource) {
+                const anySrc = this.sources.get(anySource);
+                const anyClass = anySrc.getClass(unknownType)!;
+                if (!this.visitedClasses.has(anySrc.getFullPath(anyClass))) {
+                  this.visitClassDeclarationRef(anyClass);
+                  const anySchema = this.schemas.get(anySource.internalPath)?.find((s) => s.name == unknownType);
+                  schema.deps.push(anySchema);
+                  this.schemas.get(anySource.internalPath).push(this.schema);
+                  this.visitClassDeclaration(node);
+                  return;
+                }
+                const schem = this.schemas.get(anySource.internalPath)?.find((s) => s.name == unknownType);
+                if (!schem) throw new Error("Could not find schema for " + anyClass.name.text + " in " + anySource.internalPath);
+                schema.deps.push(schem);
+              }
             }
           }
         }
@@ -461,7 +509,16 @@ export class JSONTransform extends Visitor {
 
     for (const member of this.schema.members) {
       const type = stripNull(member.type);
-      if (member.custom || member.generic) {
+      // Detect custom even if dependency linking missed (e.g., re-export alias).
+      // Scan all known schemas for a matching type name flagged as custom.
+      const isGlobalCustom = (() => {
+        for (const [, arr] of this.schemas) {
+          if (arr && arr.some((s) => s && s.name == type && s.custom)) return true;
+        }
+        return false;
+      })();
+
+      if (member.custom || member.generic || isGlobalCustom) {
         sortedMembers.string.push(member);
         sortedMembers.number.push(member);
         sortedMembers.object.push(member);
