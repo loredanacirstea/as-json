@@ -474,6 +474,11 @@ export class JSONTransform extends Visitor {
         else if (isBoolean(type) || type.startsWith("JSON.Box<bool")) sortedMembers.boolean.push(member);
         else if (isPrimitive(type) || type.startsWith("JSON.Box<") || isEnum(type, this.sources.get(this.schema.node.range.source), this.parser)) sortedMembers.number.push(member);
         else if (isArray(type)) sortedMembers.array.push(member);
+        // Add likely custom user classes (including re-exported aliases) to string group too,
+        // so string tokens can route to JSON.__deserialize<T>() which invokes custom @deserializer.
+        if (!(isString(type) || isBoolean(type) || isPrimitive(type) || isArray(type) || type.startsWith("JSON."))) {
+          sortedMembers.string.push(member);
+        }
         /*else if (isStruct(type)) */ sortedMembers.object.push(member);
         // else console.warn("Could not determine type " + type + " for member " + member.name + " in class " + this.schema.name);
       }
