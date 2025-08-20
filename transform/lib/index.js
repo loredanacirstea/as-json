@@ -495,7 +495,11 @@ export class JSONTransform extends Visitor {
             const type = stripNull(member.type);
             const isGlobalCustom = (() => {
                 for (const [, arr] of this.schemas) {
-                    if (arr && arr.some((s) => s && s.name == type && s.custom))
+                    if (arr && arr.some((s) => s && s.custom && (s.name == type ||
+                        s.name.endsWith("." + type) ||
+                        type.endsWith("." + s.name) ||
+                        s.name.split(".").pop() == type ||
+                        type.split(".").pop() == s.name)))
                         return true;
                 }
                 return false;

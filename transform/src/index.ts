@@ -513,7 +513,13 @@ export class JSONTransform extends Visitor {
       // Scan all known schemas for a matching type name flagged as custom.
       const isGlobalCustom = (() => {
         for (const [, arr] of this.schemas) {
-          if (arr && arr.some((s) => s && s.name == type && s.custom)) return true;
+          if (arr && arr.some((s) => s && s.custom && (
+            s.name == type || 
+            s.name.endsWith("." + type) || 
+            type.endsWith("." + s.name) ||
+            s.name.split(".").pop() == type ||
+            type.split(".").pop() == s.name
+          ))) return true;
         }
         return false;
       })();
